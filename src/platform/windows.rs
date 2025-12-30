@@ -3,11 +3,11 @@ use crate::{CableConfig, Error};
 
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use windows::core::*;
-use windows::Win32::Media::Audio::*;
-use windows::Win32::Media::Audio::Endpoints::*;
-use windows::Win32::System::Com::*;
 use windows::Win32::Devices::Properties::*;
 use windows::Win32::Foundation::*;
+use windows::Win32::Media::Audio::Endpoints::*;
+use windows::Win32::Media::Audio::*;
+use windows::Win32::System::Com::*;
 
 /// Windows virtual audio cable implementation using WaveRT driver and WASAPI.
 pub struct WindowsVirtualCable {
@@ -30,7 +30,7 @@ unsafe impl Sync for WindowsVirtualCable {}
 impl VirtualCableTrait for WindowsVirtualCable {
     fn new(config: CableConfig) -> Result<Self, Error> {
         log::info!("Creating Windows virtual audio cable");
-        
+
         // Initialize COM for the current thread
         unsafe {
             let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
@@ -91,35 +91,52 @@ impl VirtualCableTrait for WindowsVirtualCable {
     fn list_applications(&self) -> Result<Vec<AudioApplication>, Error> {
         unsafe {
             let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
-            let enumerator: IMMDeviceEnumerator = CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL)
-                .map_err(|e| Error::PlatformError(format!("Failed to create device enumerator: {}", e)))?;
+            let enumerator: IMMDeviceEnumerator =
+                CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL).map_err(|e| {
+                    Error::PlatformError(format!("Failed to create device enumerator: {}", e))
+                })?;
 
-            let device = enumerator.GetDefaultAudioEndpoint(eRender, eConsole)
-                .map_err(|e| Error::PlatformError(format!("Failed to get default endpoint: {}", e)))?;
+            let device = enumerator
+                .GetDefaultAudioEndpoint(eRender, eConsole)
+                .map_err(|e| {
+                    Error::PlatformError(format!("Failed to get default endpoint: {}", e))
+                })?;
 
-            let session_manager: IAudioSessionManager2 = device.Activate(CLSCTX_ALL, None)
-                .map_err(|e| Error::PlatformError(format!("Failed to activate session manager: {}", e)))?;
+            let session_manager: IAudioSessionManager2 =
+                device.Activate(CLSCTX_ALL, None).map_err(|e| {
+                    Error::PlatformError(format!("Failed to activate session manager: {}", e))
+                })?;
 
-            let session_enumerator = session_manager.GetSessionEnumerator()
-                .map_err(|e| Error::PlatformError(format!("Failed to get session enumerator: {}", e)))?;
+            let session_enumerator = session_manager.GetSessionEnumerator().map_err(|e| {
+                Error::PlatformError(format!("Failed to get session enumerator: {}", e))
+            })?;
 
-            let count = session_enumerator.GetCount()
+            let count = session_enumerator
+                .GetCount()
                 .map_err(|e| Error::PlatformError(format!("Failed to get session count: {}", e)))?;
 
             let mut apps = Vec::new();
             for i in 0..count {
                 let session = session_enumerator.GetSession(i);
                 if let Ok(session) = session {
-                    let session2: IAudioSessionControl2 = session.cast()
-                        .map_err(|e| Error::PlatformError(format!("Failed to cast session: {}", e)))?;
-                    
+                    let session2: IAudioSessionControl2 = session.cast().map_err(|e| {
+                        Error::PlatformError(format!("Failed to cast session: {}", e))
+                    })?;
+
                     let pid = session2.GetProcessId().unwrap_or(0);
                     let display_name = session.GetDisplayName().unwrap_or_default().to_string();
-                    let id = session2.GetSessionInstanceIdentifier().unwrap_or_default().to_string();
+                    let id = session2
+                        .GetSessionInstanceIdentifier()
+                        .unwrap_or_default()
+                        .to_string();
 
                     apps.push(AudioApplication {
                         id,
-                        name: if display_name.is_empty() { format!("PID: {}", pid) } else { display_name },
+                        name: if display_name.is_empty() {
+                            format!("PID: {}", pid)
+                        } else {
+                            display_name
+                        },
                         pid: Some(pid),
                         app_id: None,
                     });
@@ -132,12 +149,17 @@ impl VirtualCableTrait for WindowsVirtualCable {
     fn route_application(&self, _app_id: &str) -> Result<(), Error> {
         // Windows doesn't support moving sessions between devices easily via API
         // This usually requires a driver or an APO.
-        Err(Error::PlatformError("Application routing requires kernel driver on Windows".into()))
+        Err(Error::PlatformError(
+            "Application routing requires kernel driver on Windows".into(),
+        ))
     }
 
     fn route_system_audio(&self) -> Result<(), Error> {
         // This would involve setting the virtual cable as the default device
-        Err(Error::PlatformError("System audio routing requires administrative privileges to change default device".into()))
+        Err(Error::PlatformError(
+            "System audio routing requires administrative privileges to change default device"
+                .into(),
+        ))
     }
 
     fn unroute_application(&self, _app_id: &str) -> Result<(), Error> {
@@ -147,31 +169,43 @@ impl VirtualCableTrait for WindowsVirtualCable {
     fn list_outputs(&self) -> Result<Vec<AudioOutput>, Error> {
         unsafe {
             let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
-            let enumerator: IMMDeviceEnumerator = CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL)
-                .map_err(|e| Error::PlatformError(format!("Failed to create device enumerator: {}", e)))?;
+            let enumerator: IMMDeviceEnumerator =
+                CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL).map_err(|e| {
+                    Error::PlatformError(format!("Failed to create device enumerator: {}", e))
+                })?;
 
-            let collection = enumerator.EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE)
+            let collection = enumerator
+                .EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE)
                 .map_err(|e| Error::PlatformError(format!("Failed to enum endpoints: {}", e)))?;
 
-            let count = collection.GetCount()
+            let count = collection
+                .GetCount()
                 .map_err(|e| Error::PlatformError(format!("Failed to get device count: {}", e)))?;
 
             let default_device = enumerator.GetDefaultAudioEndpoint(eRender, eConsole).ok();
-            let default_id = default_device.and_then(|d| d.GetId().ok()).unwrap_or_default().to_string();
+            let default_id = default_device
+                .and_then(|d| d.GetId().ok())
+                .unwrap_or_default()
+                .to_string();
 
             let mut outputs = Vec::new();
             for i in 0..count {
-                let device = collection.Item(i)
-                    .map_err(|e| Error::PlatformError(format!("Failed to get device {}: {}", i, e)))?;
-                
-                let id = device.GetId()
-                    .map_err(|e| Error::PlatformError(format!("Failed to get device ID: {}", e)))?.to_string();
-                
-                let store = device.OpenPropertyStore(STGM_READ)
-                    .map_err(|e| Error::PlatformError(format!("Failed to open property store: {}", e)))?;
+                let device = collection.Item(i).map_err(|e| {
+                    Error::PlatformError(format!("Failed to get device {}: {}", i, e))
+                })?;
 
-                let friendly_name = store.GetValue(&PKEY_Device_FriendlyName)
-                    .map_err(|e| Error::PlatformError(format!("Failed to get friendly name: {}", e)))?;
+                let id = device
+                    .GetId()
+                    .map_err(|e| Error::PlatformError(format!("Failed to get device ID: {}", e)))?
+                    .to_string();
+
+                let store = device.OpenPropertyStore(STGM_READ).map_err(|e| {
+                    Error::PlatformError(format!("Failed to open property store: {}", e))
+                })?;
+
+                let friendly_name = store.GetValue(&PKEY_Device_FriendlyName).map_err(|e| {
+                    Error::PlatformError(format!("Failed to get friendly name: {}", e))
+                })?;
 
                 outputs.push(AudioOutput {
                     name: id.clone(),
@@ -184,7 +218,11 @@ impl VirtualCableTrait for WindowsVirtualCable {
     }
 
     fn duplicate_output(&self, source_name: &str, target_name: &str) -> Result<(), Error> {
-        log::info!("Duplicating output from {} to {} using Loopback capture", source_name, target_name);
+        log::info!(
+            "Duplicating output from {} to {} using Loopback capture",
+            source_name,
+            target_name
+        );
         // In a real implementation, this would spin up a background thread that:
         // 1. Opens source_name in Loopback mode
         // 2. Opens target_name in Shared mode
@@ -241,4 +279,3 @@ mod tests {
         assert!(!cable.is_running());
     }
 }
-
