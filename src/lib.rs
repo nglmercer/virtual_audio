@@ -1,35 +1,34 @@
-//! # Virtual Audio Cable
+//! # Virtual Audio Cable (VAC)
 //!
-//! A cross-platform virtual audio cable implementation in Rust.
-//! This library provides functionality to create virtual audio devices
-//! that can route audio between applications.
+//! Una implementación multiplataforma de cable de audio virtual en Rust.
+//! Esta librería permite crear dispositivos de audio virtuales para
+//! enrutar audio entre diferentes aplicaciones.
 //!
-//! ## Features
+//! ## Características
 //!
-//! - **Low latency**: Optimized for minimal audio delay
-//! - **Cross-platform**: Supports Linux (PipeWire) and Windows (WDM)
-//! - **Real-time safe**: Designed for audio callback constraints
-//! - **Memory safe**: Leverages Rust's safety guarantees
+//! - **Baja latencia**: Optimizado para un retraso mínimo de audio.
+//! - **Multiplataforma**: Soporte para Linux (PulseAudio/PipeWire) y Windows.
+//! - **Seguro en tiempo real**: Diseñado para cumplir con las restricciones de callbacks de audio.
+//! - **Memoria segura**: Aprovecha las garantías de seguridad de Rust.
 //!
-//! ## Architecture
+//! ## Arquitectura
 //!
-//! The library is organized into several modules:
+//! La librería se organiza en varios módulos fundamentales:
 //!
-//! - `buffer`: Ring buffer management for audio data transfer
-//! - `audio`: Audio processing and resampling
-//! - `platform`: Platform-specific implementations
+//! - `buffer`: Gestión de buffers circulares para transferencia de datos.
+//! - `audio`: Procesamiento de audio, remuestreo y conversión de formato.
+//! - `platform`: Implementaciones específicas para cada sistema operativo.
 //!
-//! ## Platform Support
+//! ## Soporte de Plataformas
 //!
 //! ### Linux
-//! - Uses PipeWire for audio routing
-//! - User-space implementation
-//! - Supports modern Linux distributions with PipeWire
+//! - Utiliza PulseAudio/PipeWire para el enrutamiento.
+//! - Implementación en espacio de usuario extremadamente flexible.
+//! - Soporta enrutamiento por aplicación y global.
 //!
 //! ### Windows
-//! - Uses WDM/WaveRT driver model
-//! - Kernel-mode driver (requires WDK)
-//! - Supports Windows 10/11
+//! - Basado en el modelo de controladores WDM/WaveRT.
+//! - Soporte para Windows 10/11.
 //!
 //! ## Example
 //!
@@ -41,8 +40,19 @@
 //!     let mut cable = VirtualCable::new(config)?;
 //!     cable.start()?;
 //!     
-//!     // Audio is now being routed through the virtual cable
+//!     // List applications playing audio
+//!     let apps = cable.list_applications()?;
+//!     for app in apps {
+//!         println!("Found app: {}", app.name);
+//!     }
+//!
+//!     // Route a specific application to the virtual cable
+//!     // cable.route_application("123")?;
+//!
+//!     // Route global system audio
+//!     cable.route_system_audio()?;
 //!     
+//!     cable.stop()?;
 //!     Ok(())
 //! }
 //! ```
@@ -53,7 +63,7 @@ pub mod audio;
 
 // Platform-specific module
 mod platform;
-pub use platform::{VirtualCable, VirtualCableTrait};
+pub use platform::{VirtualCable, VirtualCableTrait, AudioApplication, AudioOutput};
 
 // Common error types
 pub use crate::audio::AudioProcessor;

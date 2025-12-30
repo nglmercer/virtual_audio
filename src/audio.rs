@@ -77,10 +77,10 @@ impl AudioProcessor {
         let output_len = ((input.len() as f64) * self.resample_factor) as usize;
         let actual_output = output_len.min(output.len());
         
-        for i in 0..actual_output {
+        for (i, out) in output.iter_mut().enumerate().take(actual_output) {
             let src_idx = (i as f64 / self.resample_factor) as usize;
             if src_idx < input.len() {
-                output[i] = input[src_idx];
+                *out = input[src_idx];
             }
         }
         
@@ -282,39 +282,56 @@ mod tests {
     }
     
     #[test]
-    fn test_format_conversion_f32_to_s16() {
+    fn test_format_conversion_all() {
         let processor = AudioProcessor::new(48000, 48000, 2, AudioFormat::F32LE);
         let input = vec![1.0, 0.0, -1.0, 0.5];
         
+        // S16
         let bytes = processor.convert_format(&input, AudioFormat::S16LE);
-        assert_eq!(bytes.len(), 8); // 4 samples * 2 bytes each
-        
-        // Check first sample (1.0 -> 32767)
-        let s16 = i16::from_le_bytes([bytes[0], bytes[1]]);
-        assert_eq!(s16, 32767);
+        assert_eq!(bytes.len(), 8);
+        assert_eq!(i16::from_le_bytes([bytes[0], bytes[1]]), 32767);
+
+        // S32
+        let bytes = processor.convert_format(&input, AudioFormat::S32LE);
+        assert_eq!(bytes.len(), 16);
+        assert_eq!(i32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]), 2147483647);
+
+        // F32
+        let bytes = processor.convert_format(&input, AudioFormat::F32LE);
+        assert_eq!(bytes.len(), 16);
+        let val: f32 = unsafe { *(bytes.as_ptr() as *const f32) };
+        assert_eq!(val, 1.0);
     }
     
     #[test]
-    fn test_bytes_to_samples() {
+    fn test_bytes_to_samples_s32() {
         let processor = AudioProcessor::new(48000, 48000, 2, AudioFormat::F32LE);
-        
-        // Create S16LE bytes
         let mut bytes = Vec::new();
-        bytes.extend_from_slice(&32767i16.to_le_bytes()); // 1.0
-        bytes.extend_from_slice(&(-32767i16).to_le_bytes()); // -1.0
+        bytes.extend_from_slice(&2147483647i32.to_le_bytes());
         
-        let samples = processor.bytes_to_samples(&bytes, AudioFormat::S16LE);
-        assert_eq!(samples.len(), 2);
-        assert!((samples[0] - 1.0).abs() < 0.01);
-        assert!((samples[1] + 1.0).abs() < 0.01);
+        let samples = processor.bytes_to_samples(&bytes, AudioFormat::S32LE);
+        assert_eq!(samples.len(), 1);
+        assert!((samples[0] - 1.0).abs() < 0.00001);
     }
     
     #[test]
-    fn test_resampler() {
-        let resampler = Resampler::new(48000, 96000, 2);
-        let input = vec![0.0, 1.0, 0.0, -1.0];
-        
+    fn test_resampler_identity() {
+        let resampler = Resampler::new(48000, 48000, 1);
+        let input = vec![0.1, 0.2, 0.3];
         let output = resampler.process(&input).unwrap();
-        assert_eq!(output.len(), 8); // Double the samples
+        assert_eq!(input, output);
+    }
+
+    #[test]
+    fn test_resampler_up_down() {
+        let resampler_up = Resampler::new(44100, 88200, 1);
+        let input = vec![1.0, 0.0];
+        let output = resampler_up.process(&input).unwrap();
+        assert_eq!(output.len(), 4);
+
+        let resampler_down = Resampler::new(48000, 24000, 1);
+        let input = vec![1.0, 0.5, 0.0, -0.5];
+        let output = resampler_down.process(&input).unwrap();
+        assert_eq!(output.len(), 2);
     }
 }

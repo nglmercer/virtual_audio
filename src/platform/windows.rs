@@ -132,6 +132,34 @@ impl VirtualCableTrait for WindowsVirtualCable {
             cpu_usage: self.estimate_cpu_usage(),
         }
     }
+
+    fn list_applications(&self) -> Result<Vec<crate::platform::AudioApplication>, Error> {
+        Ok(vec![])
+    }
+
+    fn route_application(&self, _app_id: &str) -> Result<(), Error> {
+        Err(Error::PlatformError("Not implemented on Windows".into()))
+    }
+
+    fn route_system_audio(&self) -> Result<(), Error> {
+        Err(Error::PlatformError("Not implemented on Windows".into()))
+    }
+
+    fn unroute_application(&self, _app_id: &str) -> Result<(), Error> {
+        Err(Error::PlatformError("Not implemented on Windows".into()))
+    }
+
+    fn list_outputs(&self) -> Result<Vec<crate::platform::AudioOutput>, Error> {
+        Ok(vec![])
+    }
+
+    fn duplicate_output(&self, _source_name: &str, _target_name: &str) -> Result<(), Error> {
+        Err(Error::PlatformError("Not implemented on Windows".into()))
+    }
+
+    fn stop_all_duplications(&self) -> Result<(), Error> {
+        Ok(())
+    }
 }
 
 impl WindowsVirtualCable {

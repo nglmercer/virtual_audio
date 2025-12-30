@@ -19,9 +19,13 @@ crate-type = ["cdylib", "lib"]
 name = "virtual-audio-cable"
 path = "src/main.rs"
 
+[[example]]
+name = "list_devices"
+required-features = ["cpal"]
+
 [features]
 default = ["linux"]
-linux = ["pipewire", "ashpd", "cpal"]
+linux = []
 windows = ["wdk", "dep:windows"]
 
 [dependencies]
