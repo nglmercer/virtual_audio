@@ -217,6 +217,7 @@ impl Default for AudioProcessor {
 /// Resampler for sample rate conversion.
 ///
 /// This is a placeholder for integration with rubato library.
+#[allow(dead_code)]  // channels will be used with rubato integration
 pub struct Resampler {
     input_rate: u32,
     output_rate: u32,

@@ -159,6 +159,7 @@ async fn main() -> Result<()> {
 }
 
 /// Función auxiliar para crear configuración con diferentes presets
+#[allow(dead_code)]  // Helper function for different preset configurations
 fn create_preset_config(preset: &str) -> CableConfig {
     match preset {
         "high_quality" => CableConfig {

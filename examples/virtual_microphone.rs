@@ -58,23 +58,27 @@ async fn main() -> Result<()> {
     let mut interval = tokio::time::interval(Duration::from_secs(5));
     interval.tick().await; // Skip first tick
 
-    loop {
-        interval.tick().await;
-        let stats = cable.get_stats();
+    info!("📊 Monitoreando estadísticas (Presiona Ctrl+C para salir)...");
 
-        info!("📊 Estadísticas del Micrófono:");
-        info!("   Estado: {}", if stats.is_running { "✓ Activo" } else { "✗ Inactivo" });
-        info!("   Muestras procesadas: {}", stats.samples_processed);
-        info!("   Underruns (buffer vacío): {}", stats.underruns);
-        info!("   Overruns (buffer lleno): {}", stats.overruns);
-        info!("   Latencia actual: {:.2} ms", stats.latency_ms);
-        info!("   Uso de CPU: {:.1}%", stats.cpu_usage);
-        info!("");
+    loop {
+        tokio::select! {
+            _ = interval.tick() => {
+                let stats = cable.get_stats();
+                info!("📊 Estadísticas del Micrófono:");
+                info!("   Estado: {}", if stats.is_running { "✓ Activo" } else { "✗ Inactivo" });
+                info!("   Muestras procesadas: {}", stats.samples_processed);
+                info!("   Latencia actual: {:.2} ms", stats.latency_ms);
+                info!("");
+            }
+            _ = tokio::signal::ctrl_c() => {
+                info!("🛑 Recibida señal de parada...");
+                break;
+            }
+        }
     }
 
-    // El siguiente código se ejecutará al recibir Ctrl+C
-    // Nota: En una aplicación real, deberías agregar un handler para la señal
-    // cable.stop()?;
-    // info!("🛑 Micrófono virtual detenido");
-    // Ok(())
+    // Limpieza
+    cable.stop()?;
+    info!("✅ Micrófono virtual detenido y dispositivos eliminados");
+    Ok(())
 }
