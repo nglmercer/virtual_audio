@@ -1,0 +1,71 @@
+[package]
+name = "virtual-audio-cable"
+version = "0.1.0"
+edition = "2021"
+authors = ["Virtual Audio Cable Team"]
+description = "Cross-platform virtual audio cable implementation in Rust"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/yourusername/virtual-audio-cable"
+readme = "README.md"
+keywords = ["audio", "virtual", "pipe", "driver", "multimedia"]
+categories = ["multimedia::audio", "hardware-support"]
+
+[lib]
+name = "virtual_audio_cable"
+path = "src/lib.rs"
+crate-type = ["cdylib", "lib"]
+
+[[bin]]
+name = "virtual-audio-cable"
+path = "src/main.rs"
+
+[features]
+default = ["linux"]
+linux = ["pipewire", "ashpd", "cpal"]
+windows = ["wdk", "dep:windows"]
+
+[dependencies]
+# Core dependencies
+tokio = { version = "1.35", features = ["full"], optional = true }
+anyhow = "1.0"
+thiserror = "1.0"
+log = "0.4"
+env_logger = "0.11"
+cfg-if = "1.0"
+
+# Audio processing
+rubato = { version = "0.14", optional = true }
+cpal = { version = "0.15", optional = true }
+
+# Linux-specific
+pipewire = { version = "0.8", optional = true }
+ashpd = { version = "0.9", optional = true }
+
+# Windows-specific
+wdk = { version = "0.3", optional = true }
+wdk-sys = { version = "0.3", optional = true }
+wdk-alloc = { version = "0.3", optional = true }
+wdk-macros = { version = "0.3", optional = true }
+windows = { version = "0.58", features = ["Win32_Media_Audio"], optional = true }
+
+# Lock-free data structures
+crossbeam = "0.8"
+atomic_float = "0.1"
+heapless = "0.8"
+
+[dev-dependencies]
+criterion = "0.5"
+proptest = "1.4"
+
+[profile.release]
+lto = true
+opt-level = "z"
+strip = true
+codegen-units = 1
+
+[profile.dev]
+opt-level = 0
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

@@ -1,0 +1,57 @@
+# Rust
+/target/
+**/*.rs.bk
+*.pdb
+Cargo.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build artifacts
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+
+# Test artifacts
+/test_results/
+/coverage/
+
+# Documentation
+/doc/
+
+# Backup files
+*.backup
+*.bak
+*.old
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Environment files
+.env
+.env.local
+
+# OS specific
+Thumbs.db
+.DS_Store
+
+# Flatpak specific
+.flatpak-builder/
+
+# Core dumps
+core
+core.*
+
+# Package manager
+vendor/
+Cargo.toml.local
