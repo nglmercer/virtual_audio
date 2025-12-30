@@ -52,7 +52,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y pulseaudio-utils pipewire libpipewire-0.3-dev
+          sudo apt-get install -y pulseaudio-utils pipewire libpipewire-0.3-dev libasound2-dev
 
       - name: Run formatting check
         run: cargo fmt --all -- --check
@@ -81,6 +81,11 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libpipewire-0.3-dev
 
       - name: Check documentation
         run: cargo doc --all-features --no-deps
@@ -112,7 +117,7 @@ jobs:
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y pulseaudio-utils pipewire libpipewire-0.3-dev
+          sudo apt-get install -y pulseaudio-utils pipewire libpipewire-0.3-dev libasound2-dev
 
       - name: Run benchmarks
         run: cargo bench --all-features
@@ -133,7 +138,7 @@ jobs:
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y pulseaudio-utils pipewire libpipewire-0.3-dev
+          sudo apt-get install -y pulseaudio-utils pipewire libpipewire-0.3-dev libasound2-dev
 
       - name: Install tarpaulin
         run: cargo install cargo-tarpaulin
@@ -161,6 +166,11 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libpipewire-0.3-dev
 
       - name: Verify package
         run: cargo package
