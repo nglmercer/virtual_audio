@@ -124,7 +124,7 @@ fn test_error_types() {
     let platform_err = Error::PlatformError("test".to_string());
     assert!(platform_err.to_string().contains("Platform error"));
 
-    let io_err = Error::IoError(std::io::Error::new(std::io::ErrorKind::Other, "test"));
+    let io_err = Error::IoError(std::io::Error::other("test"));
     assert!(io_err.to_string().contains("IO error"));
 
     let other_err = Error::Other("test".to_string());

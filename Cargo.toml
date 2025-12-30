@@ -37,8 +37,8 @@ required-features = ["cpal"]
 [features]
 default = ["linux"]
 linux = ["pipewire", "ashpd"]
-windows = ["wdk", "wdk-sys", "wdk-alloc", "wdk-macros", "dep:windows"]
-full = ["linux", "windows"]
+windows = []
+full = ["linux"]
 
 [dependencies]
 # Core dependencies
@@ -57,12 +57,12 @@ cpal = { version = "0.15", optional = true }
 pipewire = { version = "0.8", optional = true }
 ashpd = { version = "0.9", optional = true }
 
-# Windows-specific
-wdk = { version = "0.3", optional = true }
-wdk-sys = { version = "0.3", optional = true }
-wdk-alloc = { version = "0.3", optional = true }
-wdk-macros = { version = "0.3", optional = true }
-windows = { version = "0.58", features = ["Win32_Media_Audio"], optional = true }
+[target.'cfg(windows)'.dependencies]
+wdk = "0.3"
+wdk-sys = "0.3"
+wdk-alloc = "0.3"
+wdk-macros = "0.3"
+windows = { version = "0.58", features = ["Win32_Media_Audio"] }
 
 # Lock-free data structures
 crossbeam = "0.8"

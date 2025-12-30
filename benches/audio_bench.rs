@@ -52,7 +52,7 @@ fn benchmark_triple_buffer(c: &mut Criterion) {
             let mut output = vec![0.0f32; size];
 
             b.iter(|| {
-                triple.process(&input, &mut output);
+                let _ = triple.process(&input, &mut output);
             });
         });
     }
@@ -74,7 +74,7 @@ fn benchmark_format_conversion(c: &mut Criterion) {
 
     for (name, format) in formats {
         for &size in &sizes {
-            group.bench_with_input(BenchmarkId::new(name, size), size, |b, &size| {
+            group.bench_with_input(BenchmarkId::new(name, size), &size, |b, &size| {
                 let processor = AudioProcessor::new(48000, 48000, 2, AudioFormat::F32LE);
                 let input = vec![0.5f32; size];
 
@@ -102,7 +102,7 @@ fn benchmark_format_conversion_back(c: &mut Criterion) {
 
     for (name, format) in formats {
         for &size in &sizes {
-            group.bench_with_input(BenchmarkId::new(name, size), size, |b, &size| {
+            group.bench_with_input(BenchmarkId::new(name, size), &size, |b, &size| {
                 let processor = AudioProcessor::new(48000, 48000, 2, AudioFormat::F32LE);
                 let input = vec![0.5f32; size];
                 let bytes = processor.convert_format(&input, format);
@@ -143,7 +143,7 @@ fn benchmark_resampling_up(c: &mut Criterion) {
 
     for (ratio_name, ratio) in ratios {
         for &size in &input_sizes {
-            group.bench_with_input(BenchmarkId::new(ratio_name, size), size, |b, &size| {
+            group.bench_with_input(BenchmarkId::new(ratio_name, size), &size, |b, &size| {
                 let resampler =
                     AudioProcessor::new(48000, (48000.0 * ratio) as u32, 2, AudioFormat::F32LE);
                 let input = vec![0.5f32; size];
@@ -167,7 +167,7 @@ fn benchmark_resampling_down(c: &mut Criterion) {
 
     for (ratio_name, ratio) in ratios {
         for &size in &input_sizes {
-            group.bench_with_input(BenchmarkId::new(ratio_name, size), size, |b, &size| {
+            group.bench_with_input(BenchmarkId::new(ratio_name, size), &size, |b, &size| {
                 let resampler =
                     AudioProcessor::new(48000, (48000.0 * ratio) as u32, 2, AudioFormat::F32LE);
                 let input = vec![0.5f32; size];
