@@ -23,9 +23,9 @@ async fn main() -> Result<()> {
 
     // Configuración personalizada del micrófono virtual
     let config = CableConfig {
-        sample_rate: 48000,       // Tasa de muestreo en Hz
-        channels: 2,             // 1 = mono, 2 = estéreo
-        buffer_size: 2048,        // Tamaño del buffer (mayor = más latencia, más estabilidad)
+        sample_rate: 48000,         // Tasa de muestreo en Hz
+        channels: 2,                // 1 = mono, 2 = estéreo
+        buffer_size: 2048,          // Tamaño del buffer (mayor = más latencia, más estabilidad)
         format: AudioFormat::F32LE, // Formato: F32LE, S16LE, S24LE, S32LE
         device_name: "Mi Micrófono Virtual".to_string(),
     };
@@ -33,19 +33,28 @@ async fn main() -> Result<()> {
     info!("⚙️  Configuración:");
     info!("   Nombre: {}", config.device_name);
     info!("   Tasa de muestreo: {} Hz", config.sample_rate);
-    info!("   Canales: {}", if config.channels == 1 { "Mono" } else { "Estéreo" });
-    info!("   Tamaño de buffer: {} muestras (~{:.1} ms de latencia)",
+    info!(
+        "   Canales: {}",
+        if config.channels == 1 {
+            "Mono"
+        } else {
+            "Estéreo"
+        }
+    );
+    info!(
+        "   Tamaño de buffer: {} muestras (~{:.1} ms de latencia)",
         config.buffer_size,
         (config.buffer_size as f64 * 1000.0 / config.sample_rate as f64)
     );
     info!("   Formato: {}", config.format.name());
-    info!("   Bytes por muestra: {} bytes", config.format.bytes_per_sample());
+    info!(
+        "   Bytes por muestra: {} bytes",
+        config.format.bytes_per_sample()
+    );
     info!("");
 
     // Crear el cable virtual
-    let cable = Arc::new(std::sync::Mutex::new(
-        VirtualCable::new(config.clone())?
-    ));
+    let cable = Arc::new(std::sync::Mutex::new(VirtualCable::new(config.clone())?));
     info!("✅ Cable virtual creado");
     info!("");
 
@@ -89,14 +98,19 @@ async fn main() -> Result<()> {
                 print!("✗ Inactivo | ");
             }
             print!("Muestras: {} | ", stats.samples_processed);
-            
+
             if stats.underruns > 0 || stats.overruns > 0 {
-                print!("⚠ Underruns: {} Overruns: {} | ", stats.underruns, stats.overruns);
+                print!(
+                    "⚠ Underruns: {} Overruns: {} | ",
+                    stats.underruns, stats.overruns
+                );
             }
-            
-            print!("Latencia: {:.1}ms | CPU: {:.1}%",
-                stats.latency_ms, stats.cpu_usage);
-            
+
+            print!(
+                "Latencia: {:.1}ms | CPU: {:.1}%",
+                stats.latency_ms, stats.cpu_usage
+            );
+
             // Advertencias de rendimiento
             if stats.latency_ms > 50.0 {
                 print!(" ⚠ Latencia alta!");
@@ -104,7 +118,7 @@ async fn main() -> Result<()> {
             if stats.underruns > 10 || stats.overruns > 10 {
                 print!(" ⚠ Problemas de buffer!");
             }
-            
+
             use std::io::{self, Write};
             io::stdout().flush().unwrap();
         }
@@ -137,8 +151,18 @@ async fn main() -> Result<()> {
     let final_stats = cable.lock().unwrap().get_stats();
     info!("");
     info!("📊 ESTADÍSTICAS FINALES:");
-    info!("   Estado final: {}", if final_stats.is_running { "Activo" } else { "Inactivo" });
-    info!("   Total de muestras procesadas: {}", final_stats.samples_processed);
+    info!(
+        "   Estado final: {}",
+        if final_stats.is_running {
+            "Activo"
+        } else {
+            "Inactivo"
+        }
+    );
+    info!(
+        "   Total de muestras procesadas: {}",
+        final_stats.samples_processed
+    );
     info!("   Underruns totales: {}", final_stats.underruns);
     info!("   Overruns totales: {}", final_stats.overruns);
     info!("   Latencia final: {:.2} ms", final_stats.latency_ms);
@@ -159,7 +183,7 @@ async fn main() -> Result<()> {
 }
 
 /// Función auxiliar para crear configuración con diferentes presets
-#[allow(dead_code)]  // Helper function for different preset configurations
+#[allow(dead_code)] // Helper function for different preset configurations
 fn create_preset_config(preset: &str) -> CableConfig {
     match preset {
         "high_quality" => CableConfig {

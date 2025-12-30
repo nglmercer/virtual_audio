@@ -13,15 +13,14 @@ use virtual_audio_cable::{CableConfig, VirtualCable, VirtualCableTrait};
 #[tokio::main]
 async fn main() -> Result<()> {
     // Initialize logger
-    env_logger::Builder::from_env(Env::default().default_filter_or("info"))
-        .init();
-    
+    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+
     info!("Virtual Audio Cable v0.1.0");
     info!("Cross-platform virtual audio routing in Rust");
-    
+
     // Parse command line arguments
     let args = parse_args();
-    
+
     // Create configuration
     let config = CableConfig {
         sample_rate: args.sample_rate,
@@ -30,21 +29,21 @@ async fn main() -> Result<()> {
         format: args.format,
         device_name: args.device_name.clone(),
     };
-    
+
     info!("Configuration:");
     info!("  Sample Rate: {} Hz", config.sample_rate);
     info!("  Channels: {}", config.channels);
     info!("  Buffer Size: {} samples", config.buffer_size);
     info!("  Format: {}", config.format.name());
     info!("  Device Name: {}", config.device_name);
-    
+
     // Create virtual cable
     let cable = Arc::new(std::sync::Mutex::new(VirtualCable::new(config.clone())?));
-    
+
     // Start the cable
     cable.lock().unwrap().start()?;
     info!("Virtual audio cable started successfully");
-    
+
     // Monitor stats if requested
     if args.monitor {
         let cable_clone = Arc::clone(&cable);
@@ -65,7 +64,7 @@ async fn main() -> Result<()> {
             }
         });
     }
-    
+
     // Wait for Ctrl+C
     #[cfg(unix)]
     tokio::select! {
@@ -83,11 +82,11 @@ async fn main() -> Result<()> {
             info!("Received break signal");
         }
     }
-    
+
     // Stop the cable
     cable.lock().unwrap().stop()?;
     info!("Virtual audio cable stopped");
-    
+
     Ok(())
 }
 
@@ -104,14 +103,14 @@ struct Args {
 /// Parse command line arguments
 fn parse_args() -> Args {
     let args: Vec<String> = std::env::args().collect();
-    
+
     let mut sample_rate = 48000;
     let mut channels = 2;
     let mut buffer_size = 1024;
     let mut format = virtual_audio_cable::AudioFormat::F32LE;
     let mut device_name = "Virtual Audio Cable".to_string();
     let mut monitor = false;
-    
+
     let mut i = 1;
     while i < args.len() {
         match args[i].as_str() {
@@ -183,7 +182,7 @@ fn parse_args() -> Args {
             }
         }
     }
-    
+
     Args {
         sample_rate,
         channels,

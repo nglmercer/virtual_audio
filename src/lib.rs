@@ -58,12 +58,12 @@
 //! ```
 
 // Re-export public modules
-pub mod buffer;
 pub mod audio;
+pub mod buffer;
 
 // Platform-specific module
 mod platform;
-pub use platform::{VirtualCable, VirtualCableTrait, AudioApplication, AudioOutput};
+pub use platform::{AudioApplication, AudioOutput, VirtualCable, VirtualCableTrait};
 
 // Common error types
 pub use crate::audio::AudioProcessor;
@@ -79,16 +79,16 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub enum Error {
     #[error("Buffer error: {0}")]
     BufferError(String),
-    
+
     #[error("Audio processing error: {0}")]
     AudioError(String),
-    
+
     #[error("Platform error: {0}")]
     PlatformError(String),
-    
+
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
-    
+
     #[error("Other error: {0}")]
     Other(String),
 }
@@ -98,16 +98,16 @@ pub enum Error {
 pub struct CableConfig {
     /// Sample rate in Hz (e.g., 44100, 48000, 96000)
     pub sample_rate: u32,
-    
+
     /// Number of channels (1 = mono, 2 = stereo)
     pub channels: u16,
-    
+
     /// Buffer size in samples (typically 256-4096)
     pub buffer_size: usize,
-    
+
     /// Audio format (F32, S16, etc.)
     pub format: AudioFormat,
-    
+
     /// Device name for the virtual cable
     pub device_name: String,
 }
@@ -129,13 +129,13 @@ impl Default for CableConfig {
 pub enum AudioFormat {
     /// 32-bit floating point, little-endian
     F32LE,
-    
+
     /// 16-bit signed integer, little-endian
     S16LE,
-    
+
     /// 24-bit signed integer, little-endian
     S24LE,
-    
+
     /// 32-bit signed integer, little-endian
     S32LE,
 }
@@ -150,7 +150,7 @@ impl AudioFormat {
             AudioFormat::S32LE => 4,
         }
     }
-    
+
     /// Returns a human-readable name for the format
     pub fn name(&self) -> &'static str {
         match self {

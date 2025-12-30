@@ -23,9 +23,9 @@ async fn main() -> Result<()> {
 
     // Configuración del micrófono virtual
     let config = CableConfig {
-        sample_rate: 48000,       // 48 kHz (estándar para audio de alta calidad)
-        channels: 2,             // Estéreo
-        buffer_size: 1024,       // Tamaño del buffer (ajustar según latencia deseada)
+        sample_rate: 48000,         // 48 kHz (estándar para audio de alta calidad)
+        channels: 2,                // Estéreo
+        buffer_size: 1024,          // Tamaño del buffer (ajustar según latencia deseada)
         format: AudioFormat::F32LE, // Formato de punto flotante de 32 bits
         device_name: "Micrófono Virtual".to_string(),
     };
@@ -49,7 +49,10 @@ async fn main() -> Result<()> {
 
     info!("📝 Instrucciones de uso:");
     info!("   1. Abre tu aplicación de grabación o conferencia (Zoom, Teams, OBS, etc.)");
-    info!("   2. En la configuración de audio, selecciona '{}' como micrófono", config.device_name);
+    info!(
+        "   2. En la configuración de audio, selecciona '{}' como micrófono",
+        config.device_name
+    );
     info!("   3. El audio de tu sistema ahora será capturado por el micrófono virtual");
     info!("   4. Presiona Ctrl+C para detener");
     info!("");

@@ -20,12 +20,12 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 pub struct WindowsVirtualCable {
     config: CableConfig,
     is_running: AtomicBool,
-    
+
     // Statistics
     samples_processed: AtomicU64,
     underruns: AtomicU64,
     overruns: AtomicU64,
-    
+
     // Driver handles (placeholders)
     driver_handle: Option<*mut std::ffi::c_void>,
 }
@@ -37,12 +37,13 @@ unsafe impl Sync for WindowsVirtualCable {}
 impl VirtualCableTrait for WindowsVirtualCable {
     fn new(config: CableConfig) -> Result<Self, Error> {
         log::info!("Creating Windows virtual audio cable");
-        log::info!("Configuration: {}Hz, {} channels, buffer size: {}",
+        log::info!(
+            "Configuration: {}Hz, {} channels, buffer size: {}",
             config.sample_rate,
             config.channels,
             config.buffer_size
         );
-        
+
         Ok(Self {
             config,
             is_running: AtomicBool::new(false),
@@ -52,16 +53,16 @@ impl VirtualCableTrait for WindowsVirtualCable {
             driver_handle: None,
         })
     }
-    
+
     fn start(&mut self) -> Result<(), Error> {
         if self.is_running.load(Ordering::Relaxed) {
             return Err(Error::PlatformError(
                 "Virtual cable is already running".to_string(),
             ));
         }
-        
+
         log::info!("Starting Windows virtual audio cable driver");
-        
+
         // TODO: Load and initialize kernel driver
         // This is a placeholder for actual driver initialization
         // In a full implementation, this would:
@@ -84,44 +85,44 @@ impl VirtualCableTrait for WindowsVirtualCable {
         //     // Initialize WaveRT miniport driver
         // }
         // ```
-        
+
         log::warn!("Windows kernel driver is not yet implemented");
         log::warn!("This is a placeholder for the actual WaveRT driver");
         log::warn!("See specs.md section 5.1 for implementation details");
-        
+
         // For now, just mark as running (simulation mode)
         self.is_running.store(true, Ordering::Relaxed);
-        
+
         Ok(())
     }
-    
+
     fn stop(&mut self) -> Result<(), Error> {
         if !self.is_running.load(Ordering::Relaxed) {
             return Err(Error::PlatformError(
                 "Virtual cable is not running".to_string(),
             ));
         }
-        
+
         log::info!("Stopping Windows virtual audio cable driver");
-        
+
         // TODO: Unload kernel driver
         // This would:
         // 1. Stop the driver service
         // 2. Unregister virtual devices
         // 3. Unload the .sys file
         // 4. Clean up kernel resources
-        
+
         self.is_running.store(false, Ordering::Relaxed);
-        
+
         log::info!("Windows virtual audio cable driver stopped");
-        
+
         Ok(())
     }
-    
+
     fn is_running(&self) -> bool {
         self.is_running.load(Ordering::Relaxed)
     }
-    
+
     fn get_stats(&self) -> CableStats {
         CableStats {
             is_running: self.is_running(),
@@ -176,7 +177,7 @@ impl WindowsVirtualCable {
             0.0
         }
     }
-    
+
     /// Estimates kernel driver CPU usage.
     fn estimate_cpu_usage(&self) -> f64 {
         // In a real implementation, this would query
@@ -192,7 +193,7 @@ impl WindowsVirtualCable {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_windows_cable_creation() {
         let config = CableConfig {
@@ -202,20 +203,20 @@ mod tests {
             format: crate::AudioFormat::F32LE,
             device_name: "Test Cable".to_string(),
         };
-        
+
         let cable = WindowsVirtualCable::new(config).unwrap();
         assert!(!cable.is_running());
     }
-    
+
     #[test]
     fn test_windows_cable_start_stop() {
         let cable = WindowsVirtualCable::new(CableConfig::default()).unwrap();
-        
+
         // Note: This will succeed in simulation mode
         // Real driver would require proper WDK setup
         cable.start().unwrap();
         assert!(cable.is_running());
-        
+
         cable.stop().unwrap();
         assert!(!cable.is_running());
     }
@@ -229,7 +230,7 @@ mod ffi {
     // Placeholder for future FFI bindings
     // Example:
     // use wdk_sys::*;
-    // 
+    //
     // extern "system" {
     //     pub fn IoAllocateMdl(
     //         VirtualAddress: *mut std::ffi::c_void,

@@ -10,8 +10,8 @@ use crate::platform::{CableStats, VirtualCableTrait};
 use crate::{CableConfig, Error};
 
 use std::process::Command;
-use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::{Arc, Mutex};
 
 /// Implementación de cable de audio virtual para Linux.
 ///
@@ -23,12 +23,12 @@ pub struct LinuxVirtualCable {
     triple_buffer: Arc<Mutex<TripleRingBuffer>>,
     #[allow(dead_code)]
     audio_processor: AudioProcessor,
-    
+
     // Statistics
     samples_processed: AtomicU64,
     underruns: AtomicU64,
     overruns: AtomicU64,
-    
+
     // PulseAudio state
     null_sink_id: Arc<Mutex<Option<String>>>,
     active_loopbacks: Arc<Mutex<Vec<String>>>,
@@ -37,14 +37,14 @@ pub struct LinuxVirtualCable {
 impl VirtualCableTrait for LinuxVirtualCable {
     fn new(config: CableConfig) -> Result<Self, Error> {
         let triple_buffer = Arc::new(Mutex::new(TripleRingBuffer::new(config.buffer_size)));
-        
+
         let audio_processor = AudioProcessor::new(
             config.sample_rate,
             config.sample_rate,
             config.channels,
             config.format,
         );
-        
+
         Ok(Self {
             config,
             is_running: AtomicBool::new(false),
@@ -57,20 +57,20 @@ impl VirtualCableTrait for LinuxVirtualCable {
             active_loopbacks: Arc::new(Mutex::new(Vec::new())),
         })
     }
-    
+
     fn start(&mut self) -> Result<(), Error> {
         if self.is_running.load(Ordering::Relaxed) {
             return Err(Error::PlatformError(
                 "Virtual cable is already running".to_string(),
             ));
         }
-        
+
         log::info!("Starting PulseAudio-compatible virtual audio cable");
-        
+
         // 1. Create the null sink
         let sink_name = self.config.device_name.replace(" ", "_");
         let description = &self.config.device_name;
-        
+
         let output = Command::new("pactl")
             .args([
                 "load-module",
@@ -80,31 +80,33 @@ impl VirtualCableTrait for LinuxVirtualCable {
             ])
             .output()
             .map_err(|e| Error::PlatformError(format!("Failed to execute pactl: {}", e)))?;
-            
+
         if !output.status.success() {
             return Err(Error::PlatformError(format!(
                 "Failed to create null sink: {}",
                 String::from_utf8_lossy(&output.stderr)
             )));
         }
-        
+
         let sink_id = String::from_utf8_lossy(&output.stdout).trim().to_string();
         *self.null_sink_id.lock().unwrap() = Some(sink_id.clone());
-        
+
         log::info!("Created virtual sink '{}' (ID: {})", sink_name, sink_id);
-        
+
         // 2. Get the default sink monitor to loopback system audio
         let default_sink_output = Command::new("pactl")
             .arg("get-default-sink")
             .output()
             .map_err(|e| Error::PlatformError(format!("Failed to get default sink: {}", e)))?;
-            
+
         if default_sink_output.status.success() {
-            let default_sink = String::from_utf8_lossy(&default_sink_output.stdout).trim().to_string();
+            let default_sink = String::from_utf8_lossy(&default_sink_output.stdout)
+                .trim()
+                .to_string();
             let monitor_source = format!("{}.monitor", default_sink);
-            
+
             log::info!("Routing audio from {} to {}", monitor_source, sink_name);
-            
+
             let loopback_output = Command::new("pactl")
                 .args([
                     "load-module",
@@ -115,31 +117,36 @@ impl VirtualCableTrait for LinuxVirtualCable {
                 ])
                 .output()
                 .map_err(|e| Error::PlatformError(format!("Failed to load loopback: {}", e)))?;
-                
+
             if loopback_output.status.success() {
-                let lb_id = String::from_utf8_lossy(&loopback_output.stdout).trim().to_string();
+                let lb_id = String::from_utf8_lossy(&loopback_output.stdout)
+                    .trim()
+                    .to_string();
                 self.active_loopbacks.lock().unwrap().push(lb_id.clone());
                 log::info!("System audio loopback started (ID: {})", lb_id);
             } else {
-                log::warn!("Could not start automatic loopback: {}", String::from_utf8_lossy(&loopback_output.stderr));
+                log::warn!(
+                    "Could not start automatic loopback: {}",
+                    String::from_utf8_lossy(&loopback_output.stderr)
+                );
             }
         }
-        
+
         self.is_running.store(true, Ordering::Relaxed);
         log::info!("Linux virtual audio cable started successfully via PulseAudio");
-        
+
         Ok(())
     }
-    
+
     fn stop(&mut self) -> Result<(), Error> {
         if !self.is_running.load(Ordering::Relaxed) {
             return Err(Error::PlatformError(
                 "Virtual cable is not running".to_string(),
             ));
         }
-        
+
         log::info!("Stopping PulseAudio virtual audio cable");
-        
+
         // Remove loopbacks
         let mut loopbacks = self.active_loopbacks.lock().unwrap();
         for lb_id in loopbacks.drain(..) {
@@ -148,7 +155,7 @@ impl VirtualCableTrait for LinuxVirtualCable {
                 .status();
             log::info!("Unloaded loopback module {}", lb_id);
         }
-        
+
         // Remove null sink
         if let Some(sink_id) = self.null_sink_id.lock().unwrap().take() {
             let _ = Command::new("pactl")
@@ -156,17 +163,17 @@ impl VirtualCableTrait for LinuxVirtualCable {
                 .status();
             log::info!("Unloaded null sink module {}", sink_id);
         }
-        
+
         self.is_running.store(false, Ordering::Relaxed);
         log::info!("Linux virtual audio cable stopped");
-        
+
         Ok(())
     }
-    
+
     fn is_running(&self) -> bool {
         self.is_running.load(Ordering::Relaxed)
     }
-    
+
     /// Obtiene las estadísticas actuales de rendimiento y buffers.
     fn get_stats(&self) -> CableStats {
         CableStats {
@@ -204,11 +211,33 @@ impl VirtualCableTrait for LinuxVirtualCable {
                 });
             } else if let Some(ref mut app) = current_app {
                 if line.contains("application.name =") {
-                    app.name = line.split('=').next_back().unwrap_or("").trim().trim_matches('"').to_string();
+                    app.name = line
+                        .split('=')
+                        .next_back()
+                        .unwrap_or("")
+                        .trim()
+                        .trim_matches('"')
+                        .to_string();
                 } else if line.contains("application.process.id =") {
-                    app.pid = line.split('=').next_back().unwrap_or("").trim().trim_matches('"').parse().ok();
-                } else if line.contains("pipewire.access.portal.app_id =") || line.contains("application.id =") {
-                    app.app_id = Some(line.split('=').next_back().unwrap_or("").trim().trim_matches('"').to_string());
+                    app.pid = line
+                        .split('=')
+                        .next_back()
+                        .unwrap_or("")
+                        .trim()
+                        .trim_matches('"')
+                        .parse()
+                        .ok();
+                } else if line.contains("pipewire.access.portal.app_id =")
+                    || line.contains("application.id =")
+                {
+                    app.app_id = Some(
+                        line.split('=')
+                            .next_back()
+                            .unwrap_or("")
+                            .trim()
+                            .trim_matches('"')
+                            .to_string(),
+                    );
                 }
             }
         }
@@ -245,14 +274,18 @@ impl VirtualCableTrait for LinuxVirtualCable {
             .arg("get-default-sink")
             .output()
             .map_err(|e| Error::PlatformError(format!("Failed to get default sink: {}", e)))?;
-            
+
         if !default_sink_output.status.success() {
-            return Err(Error::PlatformError("Could not determine default sink".into()));
+            return Err(Error::PlatformError(
+                "Could not determine default sink".into(),
+            ));
         }
 
-        let default_sink = String::from_utf8_lossy(&default_sink_output.stdout).trim().to_string();
+        let default_sink = String::from_utf8_lossy(&default_sink_output.stdout)
+            .trim()
+            .to_string();
         let monitor_source = format!("{}.monitor", default_sink);
-        
+
         let output = Command::new("pactl")
             .args([
                 "load-module",
@@ -282,13 +315,17 @@ impl VirtualCableTrait for LinuxVirtualCable {
             .arg("get-default-sink")
             .output()
             .map_err(|e| Error::PlatformError(format!("Failed to get default sink: {}", e)))?;
-            
+
         if !default_sink_output.status.success() {
-            return Err(Error::PlatformError("Could not determine default sink".into()));
+            return Err(Error::PlatformError(
+                "Could not determine default sink".into(),
+            ));
         }
 
-        let default_sink = String::from_utf8_lossy(&default_sink_output.stdout).trim().to_string();
-        
+        let default_sink = String::from_utf8_lossy(&default_sink_output.stdout)
+            .trim()
+            .to_string();
+
         let output = Command::new("pactl")
             .args(["move-sink-input", app_id, &default_sink])
             .output()
@@ -316,11 +353,9 @@ impl VirtualCableTrait for LinuxVirtualCable {
         let mut outputs = Vec::new();
         let mut current_output = None;
 
-        let default_sink_output = Command::new("pactl")
-            .arg("get-default-sink")
-            .output()
-            .ok();
-        let default_sink = default_sink_output.map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string());
+        let default_sink_output = Command::new("pactl").arg("get-default-sink").output().ok();
+        let default_sink =
+            default_sink_output.map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string());
 
         for line in stdout.lines() {
             let line = line.trim();
@@ -354,7 +389,7 @@ impl VirtualCableTrait for LinuxVirtualCable {
 
     fn duplicate_output(&self, source_name: &str, target_name: &str) -> Result<(), Error> {
         let monitor_source = format!("{}.monitor", source_name);
-        
+
         let output = Command::new("pactl")
             .args([
                 "load-module",
@@ -369,7 +404,12 @@ impl VirtualCableTrait for LinuxVirtualCable {
         if output.status.success() {
             let lb_id = String::from_utf8_lossy(&output.stdout).trim().to_string();
             self.active_loopbacks.lock().unwrap().push(lb_id.clone());
-            log::info!("Output duplication started from {} to {} (ID: {})", source_name, target_name, lb_id);
+            log::info!(
+                "Output duplication started from {} to {} (ID: {})",
+                source_name,
+                target_name,
+                lb_id
+            );
             Ok(())
         } else {
             Err(Error::PlatformError(format!(
@@ -398,7 +438,8 @@ impl LinuxVirtualCable {
             return Err(Error::PlatformError("Cable not running".into()));
         }
         let processed = self.triple_buffer.lock().unwrap().process(input, output)?;
-        self.samples_processed.fetch_add(processed as u64, Ordering::Relaxed);
+        self.samples_processed
+            .fetch_add(processed as u64, Ordering::Relaxed);
         Ok(processed)
     }
 
@@ -406,8 +447,12 @@ impl LinuxVirtualCable {
         let stats = self.triple_buffer.lock().unwrap().stats();
         (stats.resample_available as f64 * 1000.0) / self.config.sample_rate as f64
     }
-    
+
     fn estimate_cpu_usage(&self) -> f64 {
-        if self.is_running() { 0.5 } else { 0.0 }
+        if self.is_running() {
+            0.5
+        } else {
+            0.0
+        }
     }
 }

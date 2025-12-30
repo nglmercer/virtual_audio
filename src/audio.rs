@@ -10,16 +10,16 @@ use crate::Error;
 pub struct AudioProcessor {
     /// Input sample rate
     pub input_sample_rate: u32,
-    
+
     /// Output sample rate
     pub output_sample_rate: u32,
-    
+
     /// Number of channels
     pub channels: u16,
-    
+
     /// Audio format
     pub format: AudioFormat,
-    
+
     /// Resampling factor (output_rate / input_rate)
     resample_factor: f64,
 }
@@ -40,7 +40,7 @@ impl AudioProcessor {
         format: AudioFormat,
     ) -> Self {
         let resample_factor = output_sample_rate as f64 / input_sample_rate as f64;
-        
+
         Self {
             input_sample_rate,
             output_sample_rate,
@@ -49,7 +49,7 @@ impl AudioProcessor {
             resample_factor,
         }
     }
-    
+
     /// Processes audio samples.
     ///
     /// This method performs resampling if input and output sample rates differ.
@@ -65,28 +65,28 @@ impl AudioProcessor {
     /// Number of samples written to output
     pub fn process(&self, input: &[f32], output: &mut [f32]) -> Result<usize, Error> {
         let to_process = input.len().min(output.len());
-        
+
         if self.input_sample_rate == self.output_sample_rate {
             // Pass-through when sample rates match
             output[..to_process].copy_from_slice(&input[..to_process]);
             return Ok(to_process);
         }
-        
+
         // Simple resampling (linear interpolation - placeholder)
         // In production, use rubato or similar library
         let output_len = ((input.len() as f64) * self.resample_factor) as usize;
         let actual_output = output_len.min(output.len());
-        
+
         for (i, out) in output.iter_mut().enumerate().take(actual_output) {
             let src_idx = (i as f64 / self.resample_factor) as usize;
             if src_idx < input.len() {
                 *out = input[src_idx];
             }
         }
-        
+
         Ok(actual_output)
     }
-    
+
     /// Converts audio samples between formats.
     ///
     /// Currently supports F32 to S16 conversion.
@@ -104,10 +104,7 @@ impl AudioProcessor {
         match output_format {
             AudioFormat::F32LE => {
                 let bytes: &[u8] = unsafe {
-                    std::slice::from_raw_parts(
-                        input.as_ptr() as *const u8,
-                        input.len() * 4,
-                    )
+                    std::slice::from_raw_parts(input.as_ptr() as *const u8, input.len() * 4)
                 };
                 bytes.to_vec()
             }
@@ -137,7 +134,7 @@ impl AudioProcessor {
             }
         }
     }
-    
+
     /// Converts bytes to f32 samples.
     ///
     /// # Arguments
@@ -151,26 +148,20 @@ impl AudioProcessor {
     pub fn bytes_to_samples(&self, input: &[u8], input_format: AudioFormat) -> Vec<f32> {
         let bytes_per_sample = input_format.bytes_per_sample();
         let num_samples = input.len() / bytes_per_sample;
-        
+
         let mut output = Vec::with_capacity(num_samples);
-        
+
         match input_format {
             AudioFormat::F32LE => {
                 let samples: &[f32] = unsafe {
-                    std::slice::from_raw_parts(
-                        input.as_ptr() as *const f32,
-                        num_samples,
-                    )
+                    std::slice::from_raw_parts(input.as_ptr() as *const f32, num_samples)
                 };
                 output.extend_from_slice(samples);
             }
             AudioFormat::S16LE => {
                 for i in 0..num_samples {
                     let start = i * 2;
-                    let s16 = i16::from_le_bytes([
-                        input[start],
-                        input[start + 1],
-                    ]);
+                    let s16 = i16::from_le_bytes([input[start], input[start + 1]]);
                     output.push(s16 as f32 / 32767.0);
                 }
             }
@@ -198,10 +189,10 @@ impl AudioProcessor {
                 }
             }
         }
-        
+
         output
     }
-    
+
     /// Returns true if resampling is needed.
     pub fn needs_resampling(&self) -> bool {
         self.input_sample_rate != self.output_sample_rate
@@ -217,7 +208,7 @@ impl Default for AudioProcessor {
 /// Resampler for sample rate conversion.
 ///
 /// This is a placeholder for integration with rubato library.
-#[allow(dead_code)]  // channels will be used with rubato integration
+#[allow(dead_code)] // channels will be used with rubato integration
 pub struct Resampler {
     input_rate: u32,
     output_rate: u32,
@@ -233,7 +224,7 @@ impl Resampler {
             channels,
         }
     }
-    
+
     /// Resamples audio from input rate to output rate.
     ///
     /// This is a simple linear interpolation implementation.
@@ -242,15 +233,15 @@ impl Resampler {
         if self.input_rate == self.output_rate {
             return Ok(input.to_vec());
         }
-        
+
         let ratio = self.output_rate as f64 / self.input_rate as f64;
         let output_len = ((input.len() as f64) * ratio) as usize;
         let mut output = Vec::with_capacity(output_len);
-        
+
         for i in 0..output_len {
             let src_idx = (i as f64 / ratio) as usize;
             let frac = (i as f64 / ratio) - src_idx as f64;
-            
+
             if src_idx + 1 < input.len() {
                 // Linear interpolation
                 let y0 = input[src_idx];
@@ -261,7 +252,7 @@ impl Resampler {
                 output.push(input[src_idx]);
             }
         }
-        
+
         Ok(output)
     }
 }
@@ -269,23 +260,23 @@ impl Resampler {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_audio_processor_passthrough() {
         let processor = AudioProcessor::new(48000, 48000, 2, AudioFormat::F32LE);
         let input = vec![1.0, -1.0, 0.5, -0.5];
         let mut output = vec![0.0; 4];
-        
+
         let result = processor.process(&input, &mut output).unwrap();
         assert_eq!(result, 4);
         assert_eq!(output, input);
     }
-    
+
     #[test]
     fn test_format_conversion_all() {
         let processor = AudioProcessor::new(48000, 48000, 2, AudioFormat::F32LE);
         let input = vec![1.0, 0.0, -1.0, 0.5];
-        
+
         // S16
         let bytes = processor.convert_format(&input, AudioFormat::S16LE);
         assert_eq!(bytes.len(), 8);
@@ -294,7 +285,10 @@ mod tests {
         // S32
         let bytes = processor.convert_format(&input, AudioFormat::S32LE);
         assert_eq!(bytes.len(), 16);
-        assert_eq!(i32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]), 2147483647);
+        assert_eq!(
+            i32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
+            2147483647
+        );
 
         // F32
         let bytes = processor.convert_format(&input, AudioFormat::F32LE);
@@ -302,18 +296,18 @@ mod tests {
         let val: f32 = unsafe { *(bytes.as_ptr() as *const f32) };
         assert_eq!(val, 1.0);
     }
-    
+
     #[test]
     fn test_bytes_to_samples_s32() {
         let processor = AudioProcessor::new(48000, 48000, 2, AudioFormat::F32LE);
         let mut bytes = Vec::new();
         bytes.extend_from_slice(&2147483647i32.to_le_bytes());
-        
+
         let samples = processor.bytes_to_samples(&bytes, AudioFormat::S32LE);
         assert_eq!(samples.len(), 1);
         assert!((samples[0] - 1.0).abs() < 0.00001);
     }
-    
+
     #[test]
     fn test_resampler_identity() {
         let resampler = Resampler::new(48000, 48000, 1);

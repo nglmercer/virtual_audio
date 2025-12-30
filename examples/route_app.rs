@@ -16,7 +16,7 @@ async fn main() -> Result<()> {
 
     info!("🔍 Listando aplicaciones con audio activo...");
     let apps = cable.list_applications()?;
-    
+
     if apps.is_empty() {
         info!("❌ No se encontraron aplicaciones reproduciendo audio.");
         info!("   Abre Spotify, YouTube o Discord y vuelve a intentarlo.");
@@ -30,10 +30,15 @@ async fn main() -> Result<()> {
         let target = &apps[0];
         info!("🎯 Enrutando '{}' al cable virtual...", target.name);
         cable.route_application(&target.id)?;
-        
-        info!("🎤 El audio de '{}' ahora está en el cable virtual.", target.name);
-        info!("   Puedes verificarlo en la configuración de sonido o grabando el micrófono virtual.");
-        
+
+        info!(
+            "🎤 El audio de '{}' ahora está en el cable virtual.",
+            target.name
+        );
+        info!(
+            "   Puedes verificarlo en la configuración de sonido o grabando el micrófono virtual."
+        );
+
         info!("⏳ Manteniendo el enrutamiento por 15 segundos...");
         tokio::time::sleep(Duration::from_secs(15)).await;
 

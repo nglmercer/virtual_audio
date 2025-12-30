@@ -48,16 +48,16 @@ pub trait VirtualCableTrait: Send + Sync {
     fn new(config: CableConfig) -> Result<Self, Error>
     where
         Self: Sized;
-    
+
     /// Inicia el cable virtual.
     fn start(&mut self) -> Result<(), Error>;
-    
+
     /// Detiene el cable virtual.
     fn stop(&mut self) -> Result<(), Error>;
-    
+
     /// Devuelve verdadero si el cable está en ejecución.
     fn is_running(&self) -> bool;
-    
+
     /// Obtiene las estadísticas actuales del cable.
     fn get_stats(&self) -> CableStats;
 
@@ -77,7 +77,7 @@ pub trait VirtualCableTrait: Send + Sync {
     fn list_outputs(&self) -> Result<Vec<AudioOutput>, Error>;
 
     /// Duplica el audio de una salida hacia otra.
-    /// 
+    ///
     /// # Argumentos
     /// * `source_name` - Nombre del dispositivo de origen.
     /// * `target_name` - Nombre del dispositivo de destino.
@@ -92,19 +92,19 @@ pub trait VirtualCableTrait: Send + Sync {
 pub struct CableStats {
     /// Whether the cable is currently active
     pub is_running: bool,
-    
+
     /// Number of samples processed
     pub samples_processed: u64,
-    
+
     /// Number of underruns (buffer underflow events)
     pub underruns: u64,
-    
+
     /// Number of overruns (buffer overflow events)
     pub overruns: u64,
-    
+
     /// Current latency in milliseconds
     pub latency_ms: f64,
-    
+
     /// CPU usage percentage (0.0-100.0)
     pub cpu_usage: f64,
 }
