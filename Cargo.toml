@@ -62,7 +62,14 @@ wdk = "0.3"
 wdk-sys = "0.3"
 wdk-alloc = "0.3"
 wdk-macros = "0.3"
-windows = { version = "0.58", features = ["Win32_Media_Audio"] }
+windows = { version = "0.58", features = [
+    "Win32_Media_Audio",
+    "Win32_Media_Audio_Endpoints",
+    "Win32_System_Com",
+    "Win32_System_Ole",
+    "Win32_Devices_Properties",
+    "Win32_Foundation",
+] }
 
 # Lock-free data structures
 crossbeam = "0.8"

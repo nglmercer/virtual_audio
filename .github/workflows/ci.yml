@@ -92,7 +92,7 @@ jobs:
 
       - name: Check for broken links
         continue-on-error: true
-        run: cargo doc --all-features --no-deps -D warnings
+        run: RUSTDOCFLAGS="-D warnings" cargo doc --all-features --no-deps
 
   benchmark:
     name: Benchmark
