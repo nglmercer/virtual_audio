@@ -124,10 +124,7 @@ fn test_error_types() {
     let platform_err = Error::PlatformError("test".to_string());
     assert!(platform_err.to_string().contains("Platform error"));
 
-    let io_err = Error::IoError(std::io::Error::new(
-        std::io::ErrorKind::Other,
-        "test",
-    ));
+    let io_err = Error::IoError(std::io::Error::new(std::io::ErrorKind::Other, "test"));
     assert!(io_err.to_string().contains("IO error"));
 
     let other_err = Error::Other("test".to_string());
@@ -187,16 +184,20 @@ fn test_audio_format_conversion_roundtrip() {
                 AudioFormat::S24LE => 0.0001, // 24-bit has good precision
                 AudioFormat::S32LE => 0.0001, // 32-bit has excellent precision
             };
-            assert!((original - recovered).abs() < tolerance, 
-                    "Format: {:?}, original: {}, recovered: {}, diff: {}", 
-                    format, original, recovered, (original - recovered).abs());
+            assert!(
+                (original - recovered).abs() < tolerance,
+                "Format: {:?}, original: {}, recovered: {}, diff: {}",
+                format,
+                original,
+                recovered,
+                (original - recovered).abs()
+            );
         }
     }
 }
 
 #[test]
 fn test_resampler_quality() {
-
     // Create sine wave at 44100 Hz
     let input: Vec<f32> = (0..4410)
         .map(|i| (2.0 * std::f32::consts::PI * 440.0 * i as f32 / 44100.0).sin())
