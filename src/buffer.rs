@@ -5,7 +5,6 @@
 
 use crate::Error;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
 
 /// A simple ring buffer for audio samples.
 ///
@@ -211,7 +210,7 @@ mod tests {
     
     #[test]
     fn test_ring_buffer_basic() {
-        let buffer = RingBuffer::<f32>::new(16);
+        let mut buffer = RingBuffer::<f32>::new(16);
         
         // Write some data
         let input = vec![1.0, 2.0, 3.0, 4.0];
@@ -230,7 +229,7 @@ mod tests {
     
     #[test]
     fn test_ring_buffer_wraparound() {
-        let buffer = RingBuffer::<f32>::new(16);
+        let mut buffer = RingBuffer::<f32>::new(16);
         
         // Fill and empty to test wraparound
         for _ in 0..10 {
@@ -254,7 +253,7 @@ mod tests {
     
     #[test]
     fn test_triple_ring_buffer() {
-        let triple = TripleRingBuffer::new(64);
+        let mut triple = TripleRingBuffer::new(64);
         
         let input = vec![1.0, 2.0, 3.0, 4.0];
         let mut output = vec![0.0; 8];

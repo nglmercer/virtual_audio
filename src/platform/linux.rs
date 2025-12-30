@@ -196,7 +196,7 @@ mod tests {
     
     #[test]
     fn test_linux_cable_start_stop() {
-        let cable = LinuxVirtualCable::new(CableConfig::default()).unwrap();
+        let mut cable = LinuxVirtualCable::new(CableConfig::default()).unwrap();
         
         cable.start().unwrap();
         assert!(cable.is_running());

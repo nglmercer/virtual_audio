@@ -34,12 +34,12 @@
 //! ## Example
 //!
 //! ```rust,no_run
-//! use virtual_audio_cable::{VirtualCable, AudioFormat};
+//! use virtual_audio_cable::{VirtualCable, AudioFormat, CableConfig, VirtualCableTrait};
 //!
-//! #[tokio::main]
-//! async fn main() -> anyhow::Result<()> {
-//!     let cable = VirtualCable::new().await?;
-//!     cable.start().await?;
+//! fn main() -> anyhow::Result<()> {
+//!     let config = CableConfig::default();
+//!     let mut cable = VirtualCable::new(config)?;
+//!     cable.start()?;
 //!     
 //!     // Audio is now being routed through the virtual cable
 //!     
@@ -53,7 +53,7 @@ pub mod audio;
 
 // Platform-specific module
 mod platform;
-pub use platform::VirtualCable;
+pub use platform::{VirtualCable, VirtualCableTrait};
 
 // Common error types
 pub use crate::audio::AudioProcessor;

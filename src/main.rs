@@ -5,6 +5,7 @@
 use anyhow::Result;
 use env_logger::Env;
 use log::{error, info, warn};
+use std::sync::Arc;
 use std::time::Duration;
 use tokio::signal;
 use virtual_audio_cable::{CableConfig, VirtualCable, VirtualCableTrait};
@@ -38,19 +39,20 @@ async fn main() -> Result<()> {
     info!("  Device Name: {}", config.device_name);
     
     // Create virtual cable
-    let mut cable = VirtualCable::new(config.clone())?;
+    let cable = Arc::new(std::sync::Mutex::new(VirtualCable::new(config.clone())?));
     
     // Start the cable
-    cable.start()?;
+    cable.lock().unwrap().start()?;
     info!("Virtual audio cable started successfully");
     
     // Monitor stats if requested
     if args.monitor {
+        let cable_clone = Arc::clone(&cable);
         tokio::spawn(async move {
             let mut interval = tokio::time::interval(Duration::from_secs(1));
             loop {
                 interval.tick().await;
-                let stats = cable.get_stats();
+                let stats = cable_clone.lock().unwrap().get_stats();
                 info!(
                     "Stats: running={}, samples={}, underruns={}, overruns={}, latency={:.2}ms, cpu={:.1}%",
                     stats.is_running,
@@ -65,6 +67,14 @@ async fn main() -> Result<()> {
     }
     
     // Wait for Ctrl+C
+    #[cfg(unix)]
+    tokio::select! {
+        _ = signal::ctrl_c() => {
+            info!("Received shutdown signal");
+        }
+    }
+
+    #[cfg(windows)]
     tokio::select! {
         _ = signal::ctrl_c() => {
             info!("Received shutdown signal");
@@ -75,7 +85,7 @@ async fn main() -> Result<()> {
     }
     
     // Stop the cable
-    cable.stop()?;
+    cable.lock().unwrap().stop()?;
     info!("Virtual audio cable stopped");
     
     Ok(())
