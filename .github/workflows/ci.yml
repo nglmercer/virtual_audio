@@ -58,16 +58,40 @@ jobs:
         run: cargo fmt --all -- --check
 
       - name: Run clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: |
+          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+            cargo clippy --all-targets --all-features -- -D warnings
+          else
+            cargo clippy --all-targets --features windows -- -D warnings
+          fi
+        shell: bash
 
       - name: Build
-        run: cargo build --verbose --all-features
+        run: |
+          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+            cargo build --verbose --all-features
+          else
+            cargo build --verbose --features windows
+          fi
+        shell: bash
 
       - name: Run tests
-        run: cargo test --verbose --all-features
+        run: |
+          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+            cargo test --verbose --all-features
+          else
+            cargo test --verbose --features windows
+          fi
+        shell: bash
 
       - name: Run doc tests
-        run: cargo test --doc --all-features
+        run: |
+          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+            cargo test --doc --all-features
+          else
+            cargo test --doc --features windows
+          fi
+        shell: bash
 
   check-docs:
     name: Check Documentation

@@ -36,7 +36,7 @@ required-features = ["cpal"]
 
 [features]
 default = ["linux"]
-linux = ["pipewire", "ashpd"]
+linux = ["dep:pipewire", "dep:ashpd"]
 windows = []
 full = ["linux"]
 
@@ -53,7 +53,13 @@ cfg-if = "1.0"
 rubato = { version = "0.14", optional = true }
 cpal = { version = "0.15", optional = true }
 
-# Linux-specific
+# Lock-free data structures
+crossbeam = "0.8"
+atomic_float = "0.1"
+heapless = "0.8"
+
+# Platform-specific dependencies
+[target.'cfg(target_os = "linux")'.dependencies]
 pipewire = { version = "0.8", optional = true }
 ashpd = { version = "0.9", optional = true }
 
@@ -70,11 +76,6 @@ windows = { version = "0.58", features = [
     "Win32_Devices_Properties",
     "Win32_Foundation",
 ] }
-
-# Lock-free data structures
-crossbeam = "0.8"
-atomic_float = "0.1"
-heapless = "0.8"
 
 [dev-dependencies]
 criterion = "0.5"
