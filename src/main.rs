@@ -199,7 +199,7 @@ fn print_help() {
     println!("Cross-platform virtual audio routing in Rust");
     println!();
     println!("USAGE:");
-    println!("  virtual-audio-cable [OPTIONS]");
+    println!("  virtual_audio [OPTIONS]");
     println!();
     println!("OPTIONS:");
     println!("  -r, --sample-rate RATE    Sample rate in Hz (default: 48000)");
@@ -211,9 +211,9 @@ fn print_help() {
     println!("  -h, --help               Show this help message");
     println!();
     println!("EXAMPLES:");
-    println!("  virtual-audio-cable");
-    println!("  virtual-audio-cable --sample-rate 44100 --monitor");
-    println!("  virtual-audio-cable -c 1 -b 2048 -f s16");
+    println!("  virtual_audio");
+    println!("  virtual_audio --sample-rate 44100 --monitor");
+    println!("  virtual_audio -c 1 -b 2048 -f s16");
     println!();
     println!("PLATFORMS:");
     println!("  Linux: Uses PipeWire (user-space)");

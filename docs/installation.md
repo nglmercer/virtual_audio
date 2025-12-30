@@ -15,7 +15,7 @@ Add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-virtual-audio-cable = "0.1.0"
+virtual_audio = "0.1.0"
 ```
 
 ### Platform-Specific Features
@@ -25,7 +25,7 @@ The library uses Cargo features for platform-specific dependencies:
 #### Linux
 ```toml
 [dependencies]
-virtual-audio-cable = { version = "0.1.0", features = ["linux"] }
+virtual_audio = { version = "0.1.0", features = ["linux"] }
 ```
 
 This enables:
@@ -36,7 +36,7 @@ This enables:
 #### Windows
 ```toml
 [dependencies]
-virtual-audio-cable = { version = "0.1.0", features = ["windows"] }
+virtual_audio = { version = "0.1.0", features = ["windows"] }
 ```
 
 This enables:
@@ -94,8 +94,8 @@ To build the library from source:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/virtual-audio-cable.git
-cd virtual-audio-cable
+git clone https://github.com/nglmercer/virtual_audio.git
+cd virtual_audio
 
 # Build the library
 cargo build --release

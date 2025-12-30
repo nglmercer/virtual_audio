@@ -1,22 +1,33 @@
 [package]
-name = "virtual-audio-cable"
+name = "virtual_audio"
 version = "0.1.0"
 edition = "2021"
 authors = ["Virtual Audio Cable Team"]
-description = "Cross-platform virtual audio cable implementation in Rust"
+description = "Cross-platform virtual audio cable implementation in Rust with low latency and real-time safe design"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/yourusername/virtual-audio-cable"
+repository = "https://github.com/nglmercer/virtual_audio"
 readme = "README.md"
-keywords = ["audio", "virtual", "pipe", "driver", "multimedia"]
-categories = ["multimedia::audio", "hardware-support"]
+keywords = ["audio", "virtual", "pipe", "driver", "multimedia", "routing", "pulseaudio", "pipewire"]
+categories = ["multimedia::audio", "hardware-support", "os::linux-apis", "os::windows-apis"]
+documentation = "https://docs.rs/virtual_audio"
+homepage = "https://github.com/nglmercer/virtual_audio"
+# Exclude unnecessary files to reduce package size for crates.io
+exclude = [
+    "examples/*",
+    "docs/*",
+    ".github/*",
+    "*.md",
+    "!README.md",
+    "target/*",
+]
 
 [lib]
 name = "virtual_audio_cable"
 path = "src/lib.rs"
-crate-type = ["cdylib", "lib"]
+crate-type = ["lib"]
 
 [[bin]]
-name = "virtual-audio-cable"
+name = "virtual_audio"
 path = "src/main.rs"
 
 [[example]]
@@ -25,8 +36,9 @@ required-features = ["cpal"]
 
 [features]
 default = ["linux"]
-linux = []
-windows = ["wdk", "dep:windows"]
+linux = ["pipewire", "ashpd"]
+windows = ["wdk", "wdk-sys", "wdk-alloc", "wdk-macros", "dep:windows"]
+full = ["linux", "windows"]
 
 [dependencies]
 # Core dependencies

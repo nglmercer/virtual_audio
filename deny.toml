@@ -1,0 +1,121 @@
+# cargo-deny configuration for virtual_audio
+# See https://embarkstudios.github.io/cargo-deny/
+
+[advisories]
+# The path where the advisory database is cloned/fetched into
+db-path = "~/.cargo/advisory-db"
+# The url(s) of the advisory databases to use
+db-urls = ["https://github.com/rustsec/advisory-db"]
+# The lint level for security vulnerabilities
+vulnerability = "deny"
+# The lint level for unmaintained crates
+unmaintained = "warn"
+# The lint level for crates that have been yanked from their source registry
+yanked = "warn"
+# The lint level for crates with security notices
+notice = "warn"
+# A list of advisory IDs to ignore
+ignore = []
+
+[licenses]
+# The lint level for crates which do not have a detectable license
+unlicensed = "deny"
+# List of explicitly disallowed licenses
+# We accept both MIT and Apache-2.0, and allow common open source licenses
+deny = [
+    "GPL-2.0",
+    "GPL-3.0",
+    "AGPL-3.0",
+]
+# List of explictly allowed licenses
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-DFS-2016",
+]
+# Lint level used when no license predicates match (only warn if ignore is not configured)
+copyleft = "warn"
+# Blanket approval or denial for all possible license predicates
+allow-osi-fsf-free = "both"
+# Lint level used when no license predicates match the primary license predicate
+default = "deny"
+# The confidence threshold for detecting the license from license text.
+confidence-threshold = 0.8
+
+[bans]
+# Lint level for when multiple versions of the same crate are detected
+multiple-versions = "warn"
+# Lint level for when a crate version requirement is `*`
+wildcards = "allow"
+# The graph highlighting used when creating dotgraphs for crates
+highlight = "all-lowest"
+# List of crates that are allowed
+allow = [
+    # Add crates that should be allowed despite other rules
+]
+# List of crates to deny
+deny = [
+    # Add specific crates that should be denied
+]
+# Certain crates/versions that will be skipped when doing duplicate detection.
+skip = [
+    # Skip crates that are intentionally duplicated
+]
+# Skip tree traversal limits and allow any duplicate version
+skip-tree = []
+
+[sources]
+# Lint level for what to happen when a crate from a crate registry that is not
+# in the allow list is encountered
+unknown-registry = "warn"
+# Lint level for what to happen when a crate from a git repository that is not
+# in the allow list is encountered
+unknown-git = "warn"
+# List of URLs for allowed crate registries
+allow-registry = [
+    "https://github.com/rust-lang/crates.io-index",
+]
+# List of URLs for allowed Git repositories
+allow-git = [
+    # Add specific git repositories that are allowed
+]
+
+[sources.allow-org]
+# github.com organizations to allow git sources for
+github = [
+    "rust-lang",
+    "tokio-rs",
+    "crossbeam-rs",
+    "napi-rs",
+    "PyO3",
+]
+
+[patches]
+# List of patches to apply to dependencies
+# Format: crate-name@version = ["patch-version-1", "patch-version-2"]
+# See: https://embarkstudios.github.io/cargo-deny/checks/cfg.html
+unused = []
+
+[features]
+# List of features to deny
+# Format: crate-name@version = ["feature-name-1", "feature-name-2"]
+deny = [
+    # Add features that should be denied
+]
+# Allow/deny the entire set of feature names for a specific crate
+# Format: crate-name = ["feature-name-1", "feature-name-2"]
+allow = [
+    # Add features that should be explicitly allowed
+]
+# List of features to explicitly allow for specific crates
+exact = []
+
+[output]
+# Output type (diff, json, stdout)
+feature-depth = 1
+# Path to write the output to
+path = "cargo-deny-report.txt"

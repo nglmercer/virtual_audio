@@ -15,7 +15,7 @@ Añade esto a tu `Cargo.toml`:
 
 ```toml
 [dependencies]
-virtual-audio-cable = { path = "path/to/virtual-audio-cable" }
+virtual_audio = { path = "path/to/virtual_audio" }
 ```
 
 ## 💻 Uso Básico

@@ -75,7 +75,7 @@ windows = { version = "0.58", features = ["Win32_Media_Audio"] }
 
 ```toml
 [package]
-name = "virtual-audio-cable"
+name = "virtual_audio"
 version = "0.1.0"
 edition = "2021"
 
@@ -308,7 +308,7 @@ ServiceDisplayName="Virtual Audio Cable Driver"
 cargo install cargo-wdk
 
 # Inicializar proyecto de driver
-cargo wdk init --name virtual-audio-cable
+cargo wdk init --name virtual_audio
 
 # Compilar
 cargo wdk build

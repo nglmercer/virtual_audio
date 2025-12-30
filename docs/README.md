@@ -35,8 +35,8 @@ Welcome to the Virtual Audio Cable documentation. This library provides cross-pl
 
 ## 🔍 Quick Links
 
-- [GitHub Repository](https://github.com/yourusername/virtual-audio-cable)
-- [API Documentation](https://docs.rs/virtual-audio-cable)
+- [GitHub Repository](https://github.com/nglmercer/virtual_audio)
+- [API Documentation](https://docs.rs/virtual_audio)
 - [Examples](../examples)
 - [Release Notes](../CHANGELOG.md)
 

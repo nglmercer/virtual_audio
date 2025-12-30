@@ -35,7 +35,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-virtual-audio-cable = "0.1.0"
+virtual_audio = "0.1.0"
 tokio = { version = "1.35", features = ["full"] }
 anyhow = "1.0"
 log = "0.4"
