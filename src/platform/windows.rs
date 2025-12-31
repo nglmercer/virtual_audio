@@ -3,7 +3,6 @@ use crate::{CableConfig, Error};
 
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use windows::core::*;
-use windows::Win32::Foundation::*;
 use windows::Win32::Media::Audio::*;
 use windows::Win32::System::Com::*;
 use windows::Win32::UI::Shell::PropertiesSystem::*;
@@ -36,6 +35,7 @@ pub struct WindowsVirtualCable {
     overruns: AtomicU64,
 
     // Driver handles (placeholders)
+    #[allow(dead_code)]
     driver_handle: Option<*mut std::ffi::c_void>,
 }
 
