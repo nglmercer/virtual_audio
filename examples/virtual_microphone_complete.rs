@@ -131,12 +131,11 @@ async fn main() -> Result<()> {
     let _shutdown_result = signal::ctrl_c().await;
 
     #[cfg(windows)]
-    tokio::select! {
-        _ = signal::ctrl_c() => {
-            let _shutdown_result = Ok(());
-        }
-        _ = signal::ctrl_break() => {
-            let _shutdown_result = Ok(());
+    {
+        let mut ctrl_break = tokio::signal::windows::ctrl_break()?;
+        tokio::select! {
+            _ = signal::ctrl_c() => {}
+            _ = ctrl_break.recv() => {}
         }
     }
 

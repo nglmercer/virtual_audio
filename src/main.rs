@@ -74,12 +74,15 @@ async fn main() -> Result<()> {
     }
 
     #[cfg(windows)]
-    tokio::select! {
-        _ = signal::ctrl_c() => {
-            info!("Received shutdown signal");
-        }
-        _ = signal::ctrl_break() => {
-            info!("Received break signal");
+    {
+        let mut ctrl_break = tokio::signal::windows::ctrl_break()?;
+        tokio::select! {
+            _ = signal::ctrl_c() => {
+                info!("Received shutdown signal (Ctrl+C)");
+            }
+            _ = ctrl_break.recv() => {
+                info!("Received break signal (Ctrl+Break)");
+            }
         }
     }
 

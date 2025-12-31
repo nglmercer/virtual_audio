@@ -3,11 +3,27 @@ use crate::{CableConfig, Error};
 
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use windows::core::*;
-use windows::Win32::Devices::Properties::*;
 use windows::Win32::Foundation::*;
-use windows::Win32::Media::Audio::Endpoints::*;
 use windows::Win32::Media::Audio::*;
 use windows::Win32::System::Com::*;
+use windows::Win32::UI::Shell::PropertiesSystem::*;
+
+// Rename to avoid collision with windows::core::Result
+type LibResult<T> = std::result::Result<T, Error>;
+
+const PKEY_DEVICE_FRIENDLY_NAME: PROPERTYKEY = PROPERTYKEY {
+    fmtid: GUID::from_u128(0xa45c2502_df90_4112_b8d5_482d715835bc),
+    pid: 14,
+};
+
+unsafe fn pwstr_to_string(p: PWSTR) -> String {
+    if p.0.is_null() {
+        return String::new();
+    }
+    let s = p.to_string().unwrap_or_else(|_| String::new());
+    CoTaskMemFree(Some(p.0 as _));
+    s
+}
 
 /// Windows virtual audio cable implementation using WaveRT driver and WASAPI.
 pub struct WindowsVirtualCable {
@@ -28,7 +44,7 @@ unsafe impl Send for WindowsVirtualCable {}
 unsafe impl Sync for WindowsVirtualCable {}
 
 impl VirtualCableTrait for WindowsVirtualCable {
-    fn new(config: CableConfig) -> Result<Self, Error> {
+    fn new(config: CableConfig) -> LibResult<Self> {
         log::info!("Creating Windows virtual audio cable");
 
         // Initialize COM for the current thread
@@ -46,7 +62,7 @@ impl VirtualCableTrait for WindowsVirtualCable {
         })
     }
 
-    fn start(&mut self) -> Result<(), Error> {
+    fn start(&mut self) -> LibResult<()> {
         if self.is_running.load(Ordering::Relaxed) {
             return Err(Error::PlatformError(
                 "Virtual cable is already running".to_string(),
@@ -60,7 +76,7 @@ impl VirtualCableTrait for WindowsVirtualCable {
         Ok(())
     }
 
-    fn stop(&mut self) -> Result<(), Error> {
+    fn stop(&mut self) -> LibResult<()> {
         if !self.is_running.load(Ordering::Relaxed) {
             return Err(Error::PlatformError(
                 "Virtual cable is not running".to_string(),
@@ -88,7 +104,7 @@ impl VirtualCableTrait for WindowsVirtualCable {
         }
     }
 
-    fn list_applications(&self) -> Result<Vec<AudioApplication>, Error> {
+    fn list_applications(&self) -> LibResult<Vec<AudioApplication>> {
         unsafe {
             let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
             let enumerator: IMMDeviceEnumerator =
@@ -124,11 +140,14 @@ impl VirtualCableTrait for WindowsVirtualCable {
                     })?;
 
                     let pid = session2.GetProcessId().unwrap_or(0);
-                    let display_name = session.GetDisplayName().unwrap_or_default().to_string();
+                    let display_name = session
+                        .GetDisplayName()
+                        .map(|p| pwstr_to_string(p))
+                        .unwrap_or_default();
                     let id = session2
                         .GetSessionInstanceIdentifier()
-                        .unwrap_or_default()
-                        .to_string();
+                        .map(|p| pwstr_to_string(p))
+                        .unwrap_or_default();
 
                     apps.push(AudioApplication {
                         id,
@@ -146,7 +165,7 @@ impl VirtualCableTrait for WindowsVirtualCable {
         }
     }
 
-    fn route_application(&self, _app_id: &str) -> Result<(), Error> {
+    fn route_application(&self, _app_id: &str) -> LibResult<()> {
         // Windows doesn't support moving sessions between devices easily via API
         // This usually requires a driver or an APO.
         Err(Error::PlatformError(
@@ -154,7 +173,7 @@ impl VirtualCableTrait for WindowsVirtualCable {
         ))
     }
 
-    fn route_system_audio(&self) -> Result<(), Error> {
+    fn route_system_audio(&self) -> LibResult<()> {
         // This would involve setting the virtual cable as the default device
         Err(Error::PlatformError(
             "System audio routing requires administrative privileges to change default device"
@@ -162,11 +181,11 @@ impl VirtualCableTrait for WindowsVirtualCable {
         ))
     }
 
-    fn unroute_application(&self, _app_id: &str) -> Result<(), Error> {
+    fn unroute_application(&self, _app_id: &str) -> LibResult<()> {
         Err(Error::PlatformError("Not implemented on Windows".into()))
     }
 
-    fn list_outputs(&self) -> Result<Vec<AudioOutput>, Error> {
+    fn list_outputs(&self) -> LibResult<Vec<AudioOutput>> {
         unsafe {
             let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
             let enumerator: IMMDeviceEnumerator =
@@ -184,9 +203,8 @@ impl VirtualCableTrait for WindowsVirtualCable {
 
             let default_device = enumerator.GetDefaultAudioEndpoint(eRender, eConsole).ok();
             let default_id = default_device
-                .and_then(|d| d.GetId().ok())
-                .unwrap_or_default()
-                .to_string();
+                .and_then(|d| d.GetId().map(|p| pwstr_to_string(p)).ok())
+                .unwrap_or_default();
 
             let mut outputs = Vec::new();
             for i in 0..count {
@@ -196,20 +214,22 @@ impl VirtualCableTrait for WindowsVirtualCable {
 
                 let id = device
                     .GetId()
-                    .map_err(|e| Error::PlatformError(format!("Failed to get device ID: {}", e)))?
-                    .to_string();
+                    .map(|p| pwstr_to_string(p))
+                    .map_err(|e| Error::PlatformError(format!("Failed to get device ID: {}", e)))?;
 
                 let store = device.OpenPropertyStore(STGM_READ).map_err(|e| {
                     Error::PlatformError(format!("Failed to open property store: {}", e))
                 })?;
 
-                let friendly_name = store.GetValue(&PKEY_Device_FriendlyName).map_err(|e| {
+                let friendly_name = store.GetValue(&PKEY_DEVICE_FRIENDLY_NAME).map_err(|e| {
                     Error::PlatformError(format!("Failed to get friendly name: {}", e))
                 })?;
 
+                let description = friendly_name.to_string();
+
                 outputs.push(AudioOutput {
                     name: id.clone(),
-                    description: friendly_name.to_string(),
+                    description,
                     is_default: id == default_id,
                 });
             }
@@ -217,7 +237,7 @@ impl VirtualCableTrait for WindowsVirtualCable {
         }
     }
 
-    fn duplicate_output(&self, source_name: &str, target_name: &str) -> Result<(), Error> {
+    fn duplicate_output(&self, source_name: &str, target_name: &str) -> LibResult<()> {
         log::info!(
             "Duplicating output from {} to {} using Loopback capture",
             source_name,
@@ -231,7 +251,7 @@ impl VirtualCableTrait for WindowsVirtualCable {
         Ok(())
     }
 
-    fn stop_all_duplications(&self) -> Result<(), Error> {
+    fn stop_all_duplications(&self) -> LibResult<()> {
         Ok(())
     }
 }
